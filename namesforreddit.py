@@ -35,7 +35,7 @@ if connected:
         # PASSWORD GENERATION FINISHED
         # NAME GENERATION
         driver.get('https://en.wikipedia.org/wiki/Special:Random')
-        temp = driver.find_element(By.CLASS_NAME, "firstHeading").text
+        temp = WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.CLASS_NAME, "firstHeading"))).text
         for char in string.punctuation:
             temp = temp.replace(char, '') #REMOVES ALL PUNCTUATION
         for char in string.digits:
@@ -60,11 +60,6 @@ if connected:
         WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, 'regUsername'))).send_keys(username)
         WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, 'regPassword'))).send_keys(password)
 
-        while True:
-            if driver.current_url == "https://www.reddit.com/":
-                break
-            time.sleep(2.5)
-
         with open("accounts.txt", "a") as f:
             user_str = "\n"+str({
                 "username":username,
@@ -81,6 +76,8 @@ if connected:
             }) + ","
             f.write(user_str)
             f.close()
+
+        WebDriverWait(driver, 100).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[1]/main/div[3]/div/div/div[3]/button"))).click()
 
         print("\n\n"+f"Check for verification mail here: https://www.guerrillamail.com/\nUse address: {email.replace('@guerrillamailblock.com', '')}")
         driver.close()

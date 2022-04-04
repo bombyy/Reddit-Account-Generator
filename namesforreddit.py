@@ -1,3 +1,4 @@
+from cgitb import text
 from os.path import dirname
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -12,47 +13,77 @@ import re
 import string
 import secrets
 import os
-driver = webdriver.Chrome(ChromeDriverManager().install()) # USES CHROMEDRIVERMANAGER TO AUTO UPDATE CHROMEDRIVER
-
-# GENERATE PASSWORD
-alphabet = string.ascii_letters + string.digits
-password = ''.join(secrets.choice(alphabet) for i in range(16))
-# PASSWORD GENERATION FINISHED
-
-# NAME GENERATION
-driver.get('https://en.wikipedia.org/wiki/Special:Random')
-temp = driver.find_element(By.CLASS_NAME, "firstHeading").text
-for char in string.punctuation:
-    temp = temp.replace(char, '') #REMOVES ALL PUNCTUATION
-for char in string.digits:
-    temp = temp.replace(char, '') #REMOVES SPACES
-temp = "".join(filter(lambda char: char in string.printable, temp)) #REMOVES NON ASCII CHARACTERS
-name = ''.join(temp.split())
-name = name[:random.randint(5,7)] #KEEPS 5 TO 7 LETTERS OF THE ORIGINAL STRING
-
-
-randomNumber = random.randint(10000,99999)
+import mail
+import json
+import urllib.request
 
 dirname = os.path.dirname(__file__)
-text_file_path = os.path.join(dirname, 'namesforreddit.txt')
-text_file = open(text_file_path, "a")
-text_file.write("USR: " + name + str(randomNumber) + " PWD: " + password) #OUTPUTS NAME AND NUMBER
-text_file.write("\n")
-text_file.close()
 
-finalName = name+str(randomNumber)
-time.sleep(1)
-# NAME GENERATION FINISHED
+def connected(host='http://google.com'):
+    try:
+        urllib.request.urlopen(host) #Python 3.x
+        return True
+    except:
+        return False
 
-# REDDIT ACCOUNT CREATION
-driver.get('https://www.reddit.com/register/')
-driver.find_element(By.ID, 'regEmail').send_keys('mail@mail.mail')
-time.sleep(1)
-driver.find_element(By.XPATH, "//button[contains(text(),'Continue')]").click()
-time.sleep(3)
-driver.find_element(By.ID, 'regUsername').send_keys(finalName)
-driver.find_element(By.ID, 'regPassword').send_keys(password)
+if connected:
+    while True:
+        driver = webdriver.Chrome(ChromeDriverManager().install()) # USES CHROMEDRIVERMANAGER TO AUTO UPDATE CHROMEDRIVER
+        # GENERATE PASSWORD
+        alphabet = string.ascii_letters + string.digits
+        password = ''.join(secrets.choice(alphabet) for i in range(16))
+        # PASSWORD GENERATION FINISHED
+        # NAME GENERATION
+        driver.get('https://en.wikipedia.org/wiki/Special:Random')
+        temp = driver.find_element(By.CLASS_NAME, "firstHeading").text
+        for char in string.punctuation:
+            temp = temp.replace(char, '') #REMOVES ALL PUNCTUATION
+        for char in string.digits:
+            temp = temp.replace(char, '') #REMOVES SPACES
+        temp = "".join(filter(lambda char: char in string.printable, temp)) #REMOVES NON ASCII CHARACTERS
+        name = ''.join(temp.split())
+        name = name[:random.randint(5,7)] #KEEPS 5 TO 7 LETTERS OF THE ORIGINAL STRING
 
-WebDriverWait(driver, 40).until(EC.visibility_of_element_located((By.CLASS_NAME, "recaptcha-checkbox-checkmark")))
 
-# driver.close()
+        randomNumber = random.randint(10000,99999)
+
+        username = name+str(randomNumber)
+        password = password
+        email = mail.email_address()
+        print(username, email, password)
+        # NAME GENERATION FINISHED
+        time.sleep(4)
+        # REDDIT ACCOUNT CREATION
+        driver.get('https://www.reddit.com/register/')
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, 'regEmail'))).send_keys(email)
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Continue')]"))).click()
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, 'regUsername'))).send_keys(username)
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, 'regPassword'))).send_keys(password)
+
+        while True:
+            if driver.current_url == "https://www.reddit.com/":
+                break
+            time.sleep(2.5)
+
+        with open("accounts.txt", "a") as f:
+            user_str = "\n"+str({
+                "username":username,
+                "password":password
+            }) + ","
+            f.write(user_str)
+            f.close()
+
+        with open("account_email.txt", "a") as f:
+            user_str = "\n"+str({
+                "username":username,
+                "password":password,
+                "email":email
+            }) + ","
+            f.write(user_str)
+            f.close()
+
+        print("\n\n"+f"Check for verification mail here: https://www.guerrillamail.com/\nUse address: {email.replace('@guerrillamailblock.com', '')}")
+        driver.close()
+        inp=print(input("WAIT UNTIL YOUR VPN HAS CHANGED LOCATION!\nCreate another account? (Enter) Or Close (type 'q' + Enter)"))
+        if inp == "q":
+            exit()
